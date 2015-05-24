@@ -1,0 +1,9 @@
+# Garbage
+*.py[co]
+.ipynb_checkpoints
+*~
+.DS_Store
+*.swp
+
+# Virtual enviroment
+venv
