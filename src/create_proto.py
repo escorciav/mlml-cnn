@@ -121,5 +121,26 @@ class Parameters(object):
                 return getattr(getattr(caffe_pb2, name + 'Parameter'), param_name)
        return Param()
 
+# helper function for common structures
+
+def conv_relu(bottom, ks, nout, stride=1, pad=0, group=1):
+    conv = L.Convolution(bottom, kernel_size=ks, stride=stride,
+                                num_output=nout, pad=pad, group=group)
+    return conv, L.ReLU(conv, in_place=True)
+
+def fc_relu(bottom, nout):
+    fc = L.InnerProduct(bottom, num_output=nout)
+    return fc, L.ReLU(fc, in_place=True)
+
+def max_pool(bottom, ks, stride=1):
+    return L.Pooling(bottom, pool=P.Pooling.MAX, kernel_size=ks, stride=stride)
+
+# tools
+
+def dump_proto(filename, proto_net):
+    """Create prototxt of a network """
+    with open(filename, 'w') as fid:
+        print >>fid, proto_net
+
 layers = Layers()
 params = Parameters()

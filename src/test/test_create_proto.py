@@ -1,12 +1,13 @@
 from caffe.proto import caffe_pb2
 
 from create_proto import layers as L, params as P, NetSpec
+from create_proto import conv_relu, fc_relu, max_pool
 
 # helper function for common structures
 
 def conv_relu(bottom, ks, nout, stride=1, pad=0, group=1):
     conv = L.Convolution(bottom, kernel_size=ks, stride=stride,
-                                num_output=nout, pad=pad, group=group)
+        num_output=nout, pad=pad, group=group)
     return conv, L.ReLU(conv, in_place=True)
 
 def fc_relu(bottom, nout):
