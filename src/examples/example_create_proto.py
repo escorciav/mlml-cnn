@@ -1,5 +1,6 @@
 from caffe.proto import caffe_pb2
 
+import create_proto as cp
 from create_proto import layers as L, params as P, NetSpec
 from create_proto import conv_relu, fc_relu, max_pool
 
@@ -45,11 +46,8 @@ def alexnet(lmdb, batch_size=256, include_acc=False):
     return net.to_proto()
 
 def make_net():
-    with open('train.prototxt', 'w') as f:
-        print >>f, alexnet('/path/to/caffe-train-lmdb')
-
-    with open('test.prototxt', 'w') as f:
-        print >>f, alexnet('/path/to/caffe-val-lmdb', batch_size=50, include_acc=True)
+    cp.dump_proto('train.prototxt', alexnet('/path/to/caffe-train-lmdb'))
+    cp.dump_proto('test.prototxt', alexnet('/path/to/caffe-val-lmdb'))
 
 if __name__ == '__main__':
     make_net()
