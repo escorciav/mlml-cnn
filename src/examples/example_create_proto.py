@@ -4,20 +4,6 @@ import create_proto as cp
 from create_proto import layers as L, params as P, NetSpec
 from create_proto import conv_relu, fc_relu, max_pool
 
-# helper function for common structures
-
-def conv_relu(bottom, ks, nout, stride=1, pad=0, group=1):
-    conv = L.Convolution(bottom, kernel_size=ks, stride=stride,
-        num_output=nout, pad=pad, group=group)
-    return conv, L.ReLU(conv, in_place=True)
-
-def fc_relu(bottom, nout):
-    fc = L.InnerProduct(bottom, num_output=nout)
-    return fc, L.ReLU(fc, in_place=True)
-
-def max_pool(bottom, ks, stride=1):
-    return L.Pooling(bottom, pool=P.Pooling.MAX, kernel_size=ks, stride=stride)
-
 def alexnet(lmdb, batch_size=256, include_acc=False):
     net = NetSpec()
     net.data, net.label = L.Data(source=lmdb, backend=P.Data.LMDB, batch_size=batch_size, ntop=2,
