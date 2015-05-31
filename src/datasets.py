@@ -18,9 +18,10 @@ def espgame_dump_list(filename, outfile, ext='.jpg', root=None):
             fid_o.write(line + '\n')
     fid_o.close()
 
-def espgame_dump_labels(filename, outfile, attrb):
+def espgame_dump_labels(filename, outfile, attrb='labels',
+        dirname='data/ESP-Game/'):
     # Add ESP-game dataset to octave path
-    octave.addpath('data/ESP-Game/')
+    octave.addpath(dirname)
     # Use vec_read octave-function to load data
     info = octave.vec_read(filename)
     # Dump data into a standard format
