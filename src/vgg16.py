@@ -23,7 +23,7 @@ def add_loss_layer(net, **kwargs):
         raise ValueError, 'No information about loss function of the network'
     return net
 
-def vgg16_core(net, n_categories=1000, **kwargs):
+def vgg16_core(net, n_output=1000, **kwargs):
     """Update a caffe:network with the VGG-16 architecture
 
     Parameters
@@ -59,7 +59,7 @@ def vgg16_core(net, n_categories=1000, **kwargs):
     net.drop6 = L.Dropout(net.relu6, in_place=True)
     net.fc7, net.relu7 = fc_relu(net.drop6, 4096)
     net.drop7 = L.Dropout(net.relu7, in_place=True)
-    net.fc8 = L.InnerProduct(net.drop7, num_output=n_categories)
+    net.fc8 = L.InnerProduct(net.drop7, num_output=n_output)
     return net
 
 def vgg16_multilabel_hdf5(filename, **kwargs):

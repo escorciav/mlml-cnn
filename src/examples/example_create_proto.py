@@ -6,8 +6,10 @@ from create_proto import conv_relu, fc_relu, max_pool
 
 def alexnet(lmdb, batch_size=256, include_acc=False):
     net = NetSpec()
-    net.data, net.label = L.Data(source=lmdb, backend=P.Data.LMDB, batch_size=batch_size, ntop=2,
-        transform_param=dict(crop_size=227, mean_value=[104, 117, 123], mirror=True))
+    transf_prm = dict(crop_size=227, mean_value=[104, 117, 123], mirror=True)
+    net.data, net.label = L.Data(source=lmdb, backend=P.Data.LMDB,
+        batch_size=batch_size, ntop=2,
+        transform_param=transf_prm)
 
     # the net itself
     net.conv1, net.relu1 = conv_relu(net.data, 11, 96, stride=4)
