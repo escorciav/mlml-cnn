@@ -1,5 +1,7 @@
 import os
 
+import numpy as np
+
 import datasets as ds
 import utils
 from utils import flip_labels as flip_label_matrix
@@ -44,15 +46,26 @@ def check_txt_sources(dirname, prm=DATASET_INFO):
     if not os.path.isfile(filename):
         ds.espgame_dump_list(prm['test_list'], filename)
 
-def create_id(name, dirname, aux_dir=AUX_DIR):
+def create_prefix(name, dirname, aux_dir):
+    """Create prefix to identify and experiment"""
     aux_dir = os.path.join(dirname, aux_dir)
-    raise NotImplementedError, 'Work here'
+    exp_id = os.path.join(aux_dir, name)
     if not os.path.isdir(aux_dir):
-        return 0
+        os.makedirs(aux_dir)
+    return exp_id
 
-def dump_annotation_batches(name, Y, batch_size=256):
+def dump_annotation_batches(name, Y, prefix=DATA_DIR, aux_dir=AUX_DIR,
+        clobber=True, txt=True):
     """Save HDF5 files used for caffe-stochastic solver"""
-    raise NotImplementedError, 'Work here'
+    exp_id = create_prefix(name, prefix, aux_dir)
+    src_file, h5_file = exp_id + '.txt', exp_id + '.h5'
+    src_exist = os.path.isfile(src_file)
+    if clobber or not src_exist:
+        utils.h5py_save(h5_file, h5mode='w', label=np.float32(Y.T))
+    if txt and not src_exist:
+        with open(src_file, 'w') as fid:
+            fid.write(src_file)
+    return src_file
 
 def load_labels(dirname):
     """Load train/test label matrix"""
@@ -64,13 +77,19 @@ def load_labels(dirname):
 
 def main(exp_id='00', data_dir=DATA_DIR, flip_prob=FLIP_PROB,
         flip_type=FLIP_TYPE):
+    train_id, test_id = exp_id + '_trn', exp_id + '_tst'
+    # Check if source and annotation files exist
     check_txt_sources(data_dir)
     check_image_labels(data_dir)
-    train_id, test_id = create_id(exp_id, data_dir)
+    # Load and Flip label matrix
     Y_train, Y_test = load_labels(data_dir)
-    Y_train_f = flip_label_matrix(Y_train, flip_prob, flip_type)
-    dump_annotation_batches(train_id, Y_train_f, train_batch_sz)
-    dump_annotation_batches(test_id, Y_test, test_batch_sz)
+    Yf_train = flip_label_matrix(Y_train, flip_prob, flip_type)
+    # Dump annotations in caffe-hdf5 format
+    h5_src_train = dump_annotation_batches(train_id, Yf_train, prefix=data_dir)
+    h5_src_test = dump_annotation_batches(test_id, Y_test, prefix=data_dir)
+    # Create/Update network prototxt
+    # Create/Update solver prototxt
+    # Launch process
 
 if __name__ == '__main__':
     main()
