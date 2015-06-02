@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 import numpy as np
 from jinja2 import Template
@@ -13,6 +14,8 @@ DS_DIR = os.path.join('data', 'ESP-Game')
 AUX_DIR = os.path.join(EXP_DIR, 'aux')
 PROTOTXT_NET = os.path.join(AUX_DIR, 'vgg16_multilabel_00.jinja2')
 PROTOTXT_SOLVER = os.path.join(AUX_DIR, 'vgg16_solver_00.jinja2')
+SNAPSHOT_FILE = os.path.join(EXP_DIR, '..', 'models',
+    'VGG_ILSVRC_16_layers.caffemodel')
 TRAIN_LIST = os.path.join(DS_DIR, 'espgame_train_list.txt')
 TEST_LIST = os.path.join(DS_DIR, 'espgame_test_list.txt')
 TRAIN_ANNOT = os.path.join(DS_DIR, 'espgame_train_annot.hvecs')
@@ -70,6 +73,19 @@ def dump_annotation_batches(name, Y, prefix=AUX_DIR, clobber=True, txt=True):
             fid.write(h5_file)
     return src_file
 
+def launch_caffe(name, solver, net, snapshot=None, finetune=False, gpu_id=-1,
+        prefix=''):
+    """Laucn caffe binary (finetunning)"""
+    log = os.path.join(prefix, name)
+    cmd = ['sh', 'train.sh', str(gpu_id), solver, net, log]
+    if snapshot is not None:
+       cmd += [snapshot]
+       if finetune:
+           cmd += ['1']
+    status = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    if 'aborted' in status:
+        raise ValueError, status
+
 def load_labels(dirname):
     """Load train/test label matrix"""
     filename = os.path.join(dirname, 'label_train.h5')
@@ -101,9 +117,9 @@ def update_solver_prototxt(txt_template, name, prefix):
         print >>fid, template.render(snapshot=snapshot)
     return solverfile
 
-def main(exp_id='00', prototxt_net=PROTOTXT_NET,
+def main(exp_id='00', gpu_id=0, prototxt_net=PROTOTXT_NET,
         prototxt_solver=PROTOTXT_SOLVER, aux_dir=AUX_DIR,
-        flip_prob=FLIP_PROB, flip_type=FLIP_TYPE):
+        flip_prob=FLIP_PROB, flip_type=FLIP_TYPE, snapshot_file=SNAPSHOT_FILE):
     train_id, test_id = exp_id + '_trn', exp_id + '_tst'
     exp_dir = os.path.join(aux_dir, '..', exp_id)
     # Check if source and annotation files exist
@@ -124,7 +140,8 @@ def main(exp_id='00', prototxt_net=PROTOTXT_NET,
     # Update solver prototxt
     solverfile = update_solver_prototxt(prototxt_solver, exp_id, exp_dir)
     # Launch process
-    lauch_caffe(solverfile, netfile)
+    launch_caffe(exp_id, solverfile, netfile, finetune=True, gpu_id=gpu_id,
+        prefix=exp_dir, snapshot=snapshot_file)
 
 if __name__ == '__main__':
     main()
