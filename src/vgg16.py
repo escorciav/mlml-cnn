@@ -9,8 +9,9 @@ def add_data_blob(net, batch_size=256, **kwargs):
     if kwargs['input'] == 'image_data_no_label':
         img_src, img_root  = kwargs['img_src'], kwargs['img_root']
         img_transf = kwargs['img_transf']
-        net.data = L.ImageData(source=img_src, ntop=1, batch_size=batch_size,
-            transform_param=img_transf)
+        net.data, net.dummy = L.ImageData(source=img_src, ntop=2,
+            batch_size=batch_size, transform_param=img_transf)
+        net.silence = L.Silence(net.dummy)
     else:
         raise ValueError, 'No information about input of the network'
     return net
