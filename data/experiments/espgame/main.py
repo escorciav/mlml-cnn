@@ -12,6 +12,7 @@ EXP_DIR = os.path.join('data', 'experiments', 'espgame')
 DS_DIR = os.path.join('data', 'ESP-Game')
 AUX_DIR = os.path.join(EXP_DIR, 'aux')
 PROTOTXT_NET = os.path.join(AUX_DIR, 'vgg16_multilabel_00.jinja2')
+PROTOTXT_SOLVER = os.path.join(AUX_DIR, 'vgg16_solver_00.jinja2')
 TRAIN_LIST = os.path.join(DS_DIR, 'espgame_train_list.txt')
 TEST_LIST = os.path.join(DS_DIR, 'espgame_test_list.txt')
 TRAIN_ANNOT = os.path.join(DS_DIR, 'espgame_train_annot.hvecs')
@@ -79,7 +80,7 @@ def load_labels(dirname):
 
 def update_net_prototxt(txt_template, name, prefix, h5_train, h5_test, img_train,
         img_test):
-    """Update prototxt template"""
+    """Update network prototxt template"""
     with open(txt_template, 'r') as fid:
         prototxt = fid.read()
     template = Template(prototxt)
@@ -89,7 +90,19 @@ def update_net_prototxt(txt_template, name, prefix, h5_train, h5_test, img_train
             img_src_test=img_test, h5_src_train=h5_train, h5_src_test=h5_test)
     return netfile
 
-def main(exp_id='00', prototxt_net=PROTOTXT_NET, aux_dir=AUX_DIR,
+def update_solver_prototxt(txt_template, name, prefix):
+    """Update solver prototxt template"""
+    with open(txt_template, 'r') as fid:
+        prototxt = fid.read()
+    template = Template(prototxt)
+    solverfile = os.path.join(prefix, name + '_solver.prototxt')
+    snapshot = os.path.join(prefix, name + '_')
+    with open(solverfile, 'w') as fid:
+        print >>fid, template.render(snapshot=snapshot)
+    return solverfile
+
+def main(exp_id='00', prototxt_net=PROTOTXT_NET,
+        prototxt_solver=PROTOTXT_SOLVER, aux_dir=AUX_DIR,
         flip_prob=FLIP_PROB, flip_type=FLIP_TYPE):
     train_id, test_id = exp_id + '_trn', exp_id + '_tst'
     exp_dir = os.path.join(aux_dir, '..', exp_id)
@@ -109,7 +122,9 @@ def main(exp_id='00', prototxt_net=PROTOTXT_NET, aux_dir=AUX_DIR,
         h5_train=h5_src_train, h5_test=h5_src_test, img_train=img_src_train,
         img_test=img_src_test)
     # Update solver prototxt
+    solverfile = update_solver_prototxt(prototxt_solver, exp_id, exp_dir)
     # Launch process
+    lauch_caffe(solverfile, netfile)
 
 if __name__ == '__main__':
     main()
