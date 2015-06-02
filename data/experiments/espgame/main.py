@@ -6,6 +6,7 @@ from jinja2 import Template
 
 import datasets as ds
 import utils
+from vgg16 import vgg16_multilabel_hdf5
 from utils import flip_labels as flip_label_matrix
 
 FLIP_PROB, FLIP_TYPE = 0.0, True
@@ -61,6 +62,15 @@ def create_prefix(name, dirname):
         os.makedirs(dirname)
     return exp_id
 
+def create_prototxt_net(filename, version=0, **kwargs):
+    if version == 0:
+        prm = dict(batch_size=64, label_src="{{ h5_src_train }}",
+            input='image_data_no_label', img_src="{{ img_src_train }}",
+            img_root='data/ESP-Game/ESP-ImageSet/', loss='l2-norm',
+            img_transf=dict(crop_size=224, mean_value=[104, 117, 123],
+            mirror=True), new_width=256, new_height=256, n_output=268)
+        vgg16_multilabel_hdf5(filename, **prm)
+
 def dump_annotation_batches(name, Y, prefix=AUX_DIR, clobber=True, txt=True):
     """Save HDF5 files used for caffe-stochastic solver"""
     exp_id = create_prefix(name, prefix)
@@ -76,15 +86,13 @@ def dump_annotation_batches(name, Y, prefix=AUX_DIR, clobber=True, txt=True):
 def launch_caffe(name, solver, net, snapshot=None, finetune=False, gpu_id=-1,
         prefix=''):
     """Laucn caffe binary (finetunning)"""
-    log = os.path.join(prefix, name)
+    log = os.path.join(prefix, name + '.log')
     cmd = ['sh', 'train.sh', str(gpu_id), solver, net, log]
     if snapshot is not None:
        cmd += [snapshot]
        if finetune:
            cmd += ['1']
     status = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-    if 'aborted' in status:
-        raise ValueError, status
 
 def load_labels(dirname):
     """Load train/test label matrix"""
@@ -106,7 +114,7 @@ def update_net_prototxt(txt_template, name, prefix, h5_train, h5_test, img_train
             img_src_test=img_test, h5_src_train=h5_train, h5_src_test=h5_test)
     return netfile
 
-def update_solver_prototxt(txt_template, name, prefix):
+def update_solver_prototxt(txt_template, name, prefix, netfile):
     """Update solver prototxt template"""
     with open(txt_template, 'r') as fid:
         prototxt = fid.read()
@@ -114,11 +122,11 @@ def update_solver_prototxt(txt_template, name, prefix):
     solverfile = os.path.join(prefix, name + '_solver.prototxt')
     snapshot = os.path.join(prefix, name + '_')
     with open(solverfile, 'w') as fid:
-        print >>fid, template.render(snapshot=snapshot)
+        print >>fid, template.render(snapshot=snapshot, net_src=netfile)
     return solverfile
 
 def main(exp_id='00', gpu_id=0, prototxt_net=PROTOTXT_NET,
-        prototxt_solver=PROTOTXT_SOLVER, aux_dir=AUX_DIR,
+        prototxt_solver=PROTOTXT_SOLVER, aux_dir=AUX_DIR, finetune_flag=True,
         flip_prob=FLIP_PROB, flip_type=FLIP_TYPE, snapshot_file=SNAPSHOT_FILE):
     train_id, test_id = exp_id + '_trn', exp_id + '_tst'
     exp_dir = os.path.join(aux_dir, '..', exp_id)
@@ -138,10 +146,11 @@ def main(exp_id='00', gpu_id=0, prototxt_net=PROTOTXT_NET,
         h5_train=h5_src_train, h5_test=h5_src_test, img_train=img_src_train,
         img_test=img_src_test)
     # Update solver prototxt
-    solverfile = update_solver_prototxt(prototxt_solver, exp_id, exp_dir)
+    solverfile = update_solver_prototxt(prototxt_solver, exp_id, exp_dir,
+        netfile)
     # Launch process
-    launch_caffe(exp_id, solverfile, netfile, finetune=True, gpu_id=gpu_id,
-        prefix=exp_dir, snapshot=snapshot_file)
+    launch_caffe(exp_id, solverfile, netfile, finetune=finetune_flag,
+        gpu_id=gpu_id, prefix=exp_dir, snapshot=snapshot_file)
 
 if __name__ == '__main__':
     main()
