@@ -15,7 +15,7 @@ def espgame_dump_list(filename, outfile, ext='.jpg', root=None):
                 line = os.path.basename(line[0])
             else:
                 line += ext
-            fid_o.write(line + '\n')
+            fid_o.write(line + ' 0\n')
     fid_o.close()
 
 def espgame_dump_labels(filename, outfile, attrb='labels',
