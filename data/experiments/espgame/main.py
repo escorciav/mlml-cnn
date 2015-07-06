@@ -1,3 +1,4 @@
+import argparse
 import os
 import subprocess
 
@@ -125,7 +126,18 @@ def update_solver_prototxt(txt_template, name, prefix, netfile):
         print >>fid, template.render(snapshot=snapshot, net_src=netfile)
     return solverfile
 
-def main(exp_id='00', gpu_id=0, prototxt_net=PROTOTXT_NET,
+# Program
+
+def input_parser():
+    help_id = 'ID used to identify experiment and its results'
+    help_gpu = 'Device ID of the GPU used for the experiment'
+
+    p = argparse.ArgumentParser()
+    p.add_argument('exp_id', help=help_id, type=str)
+    p.add_argument('-gpu', '--gpu_id', help=help_gpu, type=int, default=0)
+    return p
+
+def main(exp_id, gpu_id, prototxt_net=PROTOTXT_NET,
         prototxt_solver=PROTOTXT_SOLVER, aux_dir=AUX_DIR, finetune_flag=True,
         flip_prob=FLIP_PROB, flip_type=FLIP_TYPE, snapshot_file=SNAPSHOT_FILE):
     train_id, test_id = exp_id + '_trn', exp_id + '_tst'
@@ -153,4 +165,6 @@ def main(exp_id='00', gpu_id=0, prototxt_net=PROTOTXT_NET,
         gpu_id=gpu_id, prefix=exp_dir, snapshot=snapshot_file)
 
 if __name__ == '__main__':
-    main()
+    p = input_parser()
+    args = p.parse_args()
+    main(**vars(args))
