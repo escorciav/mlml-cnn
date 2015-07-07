@@ -10,7 +10,6 @@ import utils
 from vgg16 import vgg16_multilabel_hdf5
 from utils import flip_labels as flip_label_matrix
 
-FLIP_PROB, FLIP_TYPE = 0.0, True
 EXP_DIR = os.path.join('data', 'experiments', 'espgame')
 DS_DIR = os.path.join('data', 'ESP-Game')
 AUX_DIR = os.path.join(EXP_DIR, 'aux')
@@ -18,6 +17,7 @@ PROTOTXT_NET = os.path.join(AUX_DIR, 'vgg16_multilabel_00.jinja2')
 PROTOTXT_SOLVER = os.path.join(AUX_DIR, 'vgg16_solver_00.jinja2')
 SNAPSHOT_FILE = os.path.join(EXP_DIR, '..', 'models',
     'VGG_ILSVRC_16_layers.caffemodel')
+
 TRAIN_LIST = os.path.join(DS_DIR, 'espgame_train_list.txt')
 TEST_LIST = os.path.join(DS_DIR, 'espgame_test_list.txt')
 TRAIN_ANNOT = os.path.join(DS_DIR, 'espgame_train_annot.hvecs')
@@ -131,15 +131,32 @@ def update_solver_prototxt(txt_template, name, prefix, netfile):
 def input_parser():
     help_id = 'ID used to identify experiment and its results'
     help_gpu = 'Device ID of the GPU used for the experiment'
+    help_fp = 'Probability of flipping labels'
+    help_ft = 'Flipping strategy (True: just positive, False: All)'
+    help_ff = 'Finetune model otherwise Resume training'
+    help_pn = 'Fullpath of prototxt network jinja2 template'
+    help_ps = 'Fullpath of prototxt solver jinja2 template'
+    help_sm = 'Fullpath of snapshot caffe-model'
+    help_ad = 'Fullpath of auxiliar folder of ESP-Game experiments'
 
-    p = argparse.ArgumentParser()
+    p = argparse.ArgumentParser(
+       formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument('exp_id', help=help_id, type=str)
     p.add_argument('-gpu', '--gpu_id', help=help_gpu, type=int, default=0)
+    p.add_argument('-fp', '--flip_prob', help=help_fp, type=float, default=0.0)
+    p.add_argument('-ft', '--flip_type', help=help_ft, action='store_false')
+    p.add_argument('-ff', '--finetune_flag', help=help_ff, action='store_false')
+    p.add_argument('-pn', '--prototxt_net', help=help_pn,
+        default=PROTOTXT_NET)
+    p.add_argument('-ps', '--prototxt_solver', help=help_ps,
+        default=PROTOTXT_SOLVER)
+    p.add_argument('-sm', '--snapshot_file', help=help_sm,
+        default=SNAPSHOT_FILE)
+    p.add_argument('-ad', '--aux_dir', help=help_ad, default=AUX_DIR)
     return p
 
-def main(exp_id, gpu_id, prototxt_net=PROTOTXT_NET,
-        prototxt_solver=PROTOTXT_SOLVER, aux_dir=AUX_DIR, finetune_flag=True,
-        flip_prob=FLIP_PROB, flip_type=FLIP_TYPE, snapshot_file=SNAPSHOT_FILE):
+def main(exp_id, gpu_id, flip_prob, flip_type, finetune_flag,
+        prototxt_net, prototxt_solver, aux_dir, snapshot_file):
     train_id, test_id = exp_id + '_trn', exp_id + '_tst'
     exp_dir = os.path.join(aux_dir, '..', exp_id)
     # Check if source and annotation files exist

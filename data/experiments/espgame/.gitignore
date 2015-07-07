@@ -1,5 +1,5 @@
 # Folders to store experiment information
-[0-9][0-9]
+[0-9][0-9]*
 
 # Low-Cost reproducible auxiliar data
 aux/*.h5
